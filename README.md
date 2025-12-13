@@ -19,7 +19,19 @@ location-tracker/
 
 1. Make sure Docker and Docker Compose are installed
 
-2. Start the services:
+2. Create your environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Edit `.env` and set your own credentials:
+   ```bash
+   nano .env  # or use your preferred editor
+   ```
+   
+   **Important:** Change the default password to something secure!
+
+4. Start the services:
    ```bash
    docker-compose up -d
    ```
@@ -114,3 +126,10 @@ SELECT device_id, COUNT(*) FROM locations GROUP BY device_id;
 - Add authentication (API keys)
 - Add HTTPS/TLS
 - Deploy to your home server
+
+## Security Notes
+
+- **Never commit `.env` to version control** - it contains sensitive credentials
+- The `.env.example` file is safe to commit as a template
+- Change default passwords before deploying to production
+- Consider using strong, randomly generated passwords
