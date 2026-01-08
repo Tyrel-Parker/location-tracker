@@ -29,7 +29,7 @@ nano .env
 
 Edit `.env`:
 ```bash
-DOMAIN=location-api.yourdomain.com
+DOMAIN=laptop.tyrelparker.dev
 ENVIRONMENT=laptop
 PROXY_TYPE=traefik
 ```
@@ -50,7 +50,7 @@ Traefik will automatically pick up the service via labels!
 
 Edit `.env`:
 ```bash
-DOMAIN=location-api.yourdomain.com
+DOMAIN=homelab.tyrelparker.dev
 ENVIRONMENT=homelab
 PROXY_TYPE=nginx
 API_PORT=5000  # Or any available port
@@ -80,12 +80,20 @@ sudo systemctl reload nginx
 ### 3. Verify It Works
 
 ```bash
-# Check health
-curl http://localhost:5000/health
+# Check health locally
+curl http://localhost:5000/location-tracker/health
 
-# Or via your domain
-curl https://location-api.yourdomain.com/health
+# Or open the web interface in your browser
+open http://localhost:5000/location-tracker
+
+# Or via your domain (laptop)
+curl https://laptop.tyrelparker.dev/location-tracker/health
+
+# Or via your domain (homelab)
+curl https://homelab.tyrelparker.dev/location-tracker/health
 ```
+
+You should see a web interface where you can test submitting locations!
 
 You should see:
 ```json
@@ -98,14 +106,40 @@ You should see:
 
 ## API Endpoints
 
+### Web Interface
+Open your browser and go to:
+- `http://localhost:5000/location-tracker` (local)
+- `https://laptop.tyrelparker.dev/location-tracker` (laptop via Cloudflare)
+- `https://homelab.tyrelparker.dev/location-tracker` (homelab via Cloudflare)
+
+You'll see a simple web form to test submitting locations and view the last 10 submissions.
+
 ### Health Check
 ```bash
-curl https://location-api.yourdomain.com/health
+# Laptop
+curl https://laptop.tyrelparker.dev/location-tracker/health
+
+# Homelab
+curl https://homelab.tyrelparker.dev/location-tracker/health
+
+# Also available at root for backwards compatibility
+curl https://homelab.tyrelparker.dev/health
 ```
 
 ### Add Location
 ```bash
-curl -X POST https://location-api.yourdomain.com/api/location \
+# Using /location-tracker prefix (recommended)
+curl -X POST https://homelab.tyrelparker.dev/location-tracker/api/location \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": "my_phone",
+    "latitude": 47.6588,
+    "longitude": -117.4260,
+    "timestamp": "2024-12-12T10:30:00Z"
+  }'
+
+# Also works at root /api/location for backwards compatibility
+curl -X POST https://homelab.tyrelparker.dev/api/location \
   -H "Content-Type: application/json" \
   -d '{
     "device_id": "my_phone",
@@ -117,42 +151,44 @@ curl -X POST https://location-api.yourdomain.com/api/location \
 
 ### Get Locations (last 24 hours)
 ```bash
-curl https://location-api.yourdomain.com/api/locations
+curl https://homelab.tyrelparker.dev/location-tracker/api/locations
 ```
 
 ### Get Locations (last 6 hours)
 ```bash
-curl https://location-api.yourdomain.com/api/locations?hours=6
+curl https://homelab.tyrelparker.dev/location-tracker/api/locations?hours=6
 ```
 
 ### Get Locations for Specific Device
 ```bash
-curl https://location-api.yourdomain.com/api/locations?device_id=my_phone
+curl https://homelab.tyrelparker.dev/location-tracker/api/locations?device_id=my_phone
 ```
 
 ### Get Device List
 ```bash
-curl https://location-api.yourdomain.com/api/devices
+curl https://homelab.tyrelparker.dev/location-tracker/api/devices
 ```
 
 ## Architecture
 
 ```
-                     Cloudflare Tunnel
-                            |
-              +-------------+-------------+
-              |                           |
-         [Traefik]                    [nginx]
-          (Laptop)                   (Homelab)
-              |                           |
-              +-------------+-------------+
-                            |
-                    [location_api]
-                            |
-                      [postgres]
+              Cloudflare Tunnel
+                     |
+        +------------+------------+
+        |                         |
+   laptop.tyrelparker.dev   homelab.tyrelparker.dev
+        |                         |
+    [Traefik]                 [nginx]
+     (Laptop)                (Homelab)
+        |                         |
+        +------------+------------+
+                     |
+             [location_api]
+                     |
+               [postgres]
 ```
 
-Both setups route through Cloudflare tunnels to the same domain, but use different reverse proxies locally.
+Each location has its own subdomain but runs identical code.
 
 ## Files Explained
 
@@ -198,11 +234,40 @@ docker-compose down -v
 
 ## Android App Configuration
 
-Your Android app should use:
-- **Production URL**: `https://location-api.yourdomain.com`
-- **Dev/Test URL**: `http://192.168.x.x:5000` (direct to laptop/homelab IP)
+Your Android app should support both locations:
 
-Add a settings toggle in the app to switch between prod and dev.
+```kotlin
+object ApiConfig {
+    // Production endpoints
+    const val LAPTOP_URL = "https://laptop.tyrelparker.dev"
+    const val HOMELAB_URL = "https://homelab.tyrelparker.dev"
+    
+    // Dev/Test (when on same network as device)
+    const val DEV_URL = "http://192.168.1.100:5000"
+    
+    // Default to homelab (always-on)
+    var currentUrl = HOMELAB_URL
+}
+```
+
+**Recommended approach:**
+1. **Default to homelab** (always-on server)
+2. **Add settings toggle** to switch to laptop when needed
+3. **Auto-failover:** Try homelab first, fall back to laptop if unreachable
+
+Example failover logic:
+```kotlin
+suspend fun getCurrentApiUrl(): String {
+    return try {
+        // Try homelab first
+        testConnection(HOMELAB_URL)
+        HOMELAB_URL
+    } catch (e: Exception) {
+        // Fall back to laptop
+        LAPTOP_URL
+    }
+}
+```
 
 ## Troubleshooting
 

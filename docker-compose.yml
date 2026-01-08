@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
@@ -41,7 +39,7 @@ services:
     labels:
       # Traefik labels (only used if Traefik is running)
       - "traefik.enable=true"
-      - "traefik.http.routers.location-api.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.location-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/location-tracker`)"
       - "traefik.http.routers.location-api.entrypoints=websecure"
       - "traefik.http.routers.location-api.tls=true"
       - "traefik.http.services.location-api.loadbalancer.server.port=5000"

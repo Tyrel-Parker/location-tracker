@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -17,6 +17,13 @@ def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     return conn
 
+@app.route('/location-tracker')
+@app.route('/location-tracker/')
+def index():
+    """Serve the test web interface"""
+    return send_from_directory('.', 'index.html')
+
+@app.route('/location-tracker/health', methods=['GET'])
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
@@ -35,6 +42,7 @@ def health_check():
             'environment': ENVIRONMENT
         }), 500
 
+@app.route('/location-tracker/api/location', methods=['POST'])
 @app.route('/api/location', methods=['POST'])
 def add_location():
     """Add a new location point"""
@@ -79,6 +87,7 @@ def add_location():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/location-tracker/api/locations', methods=['GET'])
 @app.route('/api/locations', methods=['GET'])
 def get_locations():
     """Get locations from the last N hours"""
@@ -141,6 +150,7 @@ def get_locations():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/location-tracker/api/devices', methods=['GET'])
 @app.route('/api/devices', methods=['GET'])
 def get_devices():
     """Get list of unique device IDs"""

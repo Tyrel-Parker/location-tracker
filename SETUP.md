@@ -67,8 +67,11 @@ networks:
 # Local test (both locations)
 curl http://localhost:5000/health
 
-# Through reverse proxy
-curl https://location-api.yourdomain.com/health
+# Through reverse proxy - Laptop
+curl https://laptop.tyrelparker.dev/health
+
+# Through reverse proxy - Homelab
+curl https://homelab.tyrelparker.dev/health
 ```
 
 Should return:
@@ -89,17 +92,21 @@ Should return:
 
 ## Android App URLs
 
-**For the Android app**, you'll want to support:
+**For the Android app**, you'll want to support both locations:
 
 ```kotlin
-// Production (works from anywhere)
-const val PROD_URL = "https://location-api.yourdomain.com"
+// Production (works from anywhere via Cloudflare tunnel)
+const val LAPTOP_URL = "https://laptop.tyrelparker.dev"
+const val HOMELAB_URL = "https://homelab.tyrelparker.dev"
 
 // Dev/Local (when on same network)
 const val DEV_URL = "http://192.168.1.100:5000"  // Your local IP
 ```
 
-Add a toggle in app settings to switch between them.
+**Recommended strategy:**
+- **Default to homelab** (always-on, more reliable)
+- **Add a settings toggle** to manually switch to laptop
+- **Bonus:** Implement auto-failover that tries homelab first, falls back to laptop
 
 ## Common Issues
 

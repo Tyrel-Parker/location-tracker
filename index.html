@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Tracker - Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .divider {
+            margin: 40px 0;
+            border: none;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #f8f9fa;
+        }
+        
+        th {
+            text-align: left;
+            padding: 12px;
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        td {
+            padding: 12px;
+            color: #666;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+            font-style: italic;
+        }
+        
+        .timestamp {
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Location Tracker</h1>
+        <p class="subtitle">Test Interface</p>
+        
+        <form id="locationForm">
+            <div class="form-group">
+                <label for="deviceId">Device Name</label>
+                <input type="text" id="deviceId" name="deviceId" placeholder="e.g., my_phone" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="latitude">Latitude</label>
+                <input type="number" id="latitude" name="latitude" step="any" placeholder="e.g., 47.6588" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="longitude">Longitude</label>
+                <input type="number" id="longitude" name="longitude" step="any" placeholder="e.g., -117.4260" required>
+            </div>
+            
+            <button type="submit" id="submitBtn">Submit Location</button>
+            
+            <div id="message" class="message"></div>
+        </form>
+        
+        <hr class="divider">
+        
+        <h2>Recent Submissions (Last 10)</h2>
+        <div class="table-wrapper">
+            <table id="locationsTable">
+                <thead>
+                    <tr>
+                        <th>Device</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="4" class="loading">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - update this to match your API endpoint
+        const API_BASE_URL = window.location.origin;
+        
+        // Load recent locations on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecentLocations();
+        });
+        
+        // Handle form submission
+        document.getElementById('locationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            
+            // Get form values
+            const deviceId = document.getElementById('deviceId').value;
+            const latitude = parseFloat(document.getElementById('latitude').value);
+            const longitude = parseFloat(document.getElementById('longitude').value);
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            // Hide any previous messages
+            messageDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/location`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        device_id: deviceId,
+                        latitude: latitude,
+                        longitude: longitude,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Success
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = '✓ Location submitted successfully!';
+                    messageDiv.style.display = 'block';
+                    
+                    // Reload the table
+                    loadRecentLocations();
+                    
+                    // Clear form (except device name for convenience)
+                    document.getElementById('latitude').value = '';
+                    document.getElementById('longitude').value = '';
+                } else {
+                    // Error from API
+                    throw new Error(data.error || 'Failed to submit location');
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '✗ Error: ' + error.message;
+                messageDiv.style.display = 'block';
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Location';
+            }
+        });
+        
+        // Load recent locations from API
+        async function loadRecentLocations() {
+            const tableBody = document.getElementById('tableBody');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/locations?hours=24`);
+                const data = await response.json();
+                
+                if (response.ok && data.locations && data.locations.length > 0) {
+                    // Take only the last 10
+                    const recentLocations = data.locations.slice(0, 10);
+                    
+                    // Build table rows
+                    tableBody.innerHTML = recentLocations.map(loc => `
+                        <tr>
+                            <td><strong>${escapeHtml(loc.device_id)}</strong></td>
+                            <td>${loc.latitude.toFixed(6)}</td>
+                            <td>${loc.longitude.toFixed(6)}</td>
+                            <td>
+                                ${formatTimestamp(loc.timestamp)}
+                                <div class="timestamp">${new Date(loc.timestamp).toLocaleString()}</div>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="no-data">No locations found</td></tr>';
+                }
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="no-data">Error loading data: ${error.message}</td></tr>`;
+            }
+        }
+        
+        // Format timestamp to relative time
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
