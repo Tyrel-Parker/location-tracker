@@ -35,20 +35,20 @@ services:
     restart: unless-stopped
     networks:
       - location_net
-      - web
+      - proxy
     labels:
       # Traefik labels (only used if Traefik is running)
       - "traefik.enable=true"
       - "traefik.http.routers.location-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/location-tracker`)"
-      - "traefik.http.routers.location-api.entrypoints=websecure"
-      - "traefik.http.routers.location-api.tls=true"
+      - "traefik.http.routers.location-api.entrypoints=web"
+      - "traefik.http.routers.location-api.tls=false"
       - "traefik.http.services.location-api.loadbalancer.server.port=5000"
-      - "traefik.docker.network=web"
+      - "traefik.docker.network=proxy"
 
 networks:
   location_net:
     driver: bridge
-  web:
+  proxy:
     external: true
     # This network should exist if you're using Traefik
     # If it doesn't exist and you're using nginx, comment out the 'external: true' line
