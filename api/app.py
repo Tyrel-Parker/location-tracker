@@ -10,6 +10,7 @@ CORS(app)  # Allow requests from Android app
 
 # Database connection
 DATABASE_URL = os.environ.get('DATABASE_URL')
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'unknown')
 
 def get_db_connection():
     """Create a database connection"""
@@ -22,9 +23,17 @@ def health_check():
     try:
         conn = get_db_connection()
         conn.close()
-        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'environment': ENVIRONMENT
+        }), 200
     except Exception as e:
-        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'environment': ENVIRONMENT
+        }), 500
 
 @app.route('/api/location', methods=['POST'])
 def add_location():
