@@ -15,8 +15,12 @@ docker-compose up -d
 cp .env.homelab .env
 # Edit docker-compose.yml: comment out "external: true" under web network
 docker-compose up -d
+# if there is already a conf file for the homelab.domain then 
+copy the location data from the location-api to the existing conf file for that subdomain
+# else
 sudo cp nginx/location-api.conf /etc/nginx/sites-available/
 sudo ln -s /etc/nginx/sites-available/location-api.conf /etc/nginx/sites-enabled/
+# end
 sudo systemctl reload nginx
 ```
 
